@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String        @id @default(cuid())
+  phone             String        @unique // E.164 format, e.g. +2348012345678
+  email             String?       // optional, required by Paystack for checkout
+  name              String?
+  hasClaimedWelcome Boolean       @default(false)
+  lastReturnClaim   DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  otpSessions       OtpSession[]
+  bonusClaims       BonusClaim[]
+  payouts           Payout[]
+}
+
+model OtpSession {
+  id          String   @id @default(cuid())
+  userId      String
+  phone       String   // duplicate for quick lookup
+  otpCode     String   // ⚠️ PLAINTEXT — deliberately vulnerable
+  attempts    Int      @default(0)
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone, used])
+}
+
+model BonusClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int      // in kobo (NGN 1350 = 135,000 kobo)
+  type      String   // "welcome" | "return"
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model Payout {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Int      // in kobo
+  recipientCode String
+  status        String   @default("pending") // pending | success | failed
+  reference     String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "otp_send:+2348012345678"
+  count     Int      @default(0)
+  expiresAt DateTime
+}
