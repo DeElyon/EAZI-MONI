@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Building2, CreditCard, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Building2, CreditCard, CheckCircle2, Loader2, ShieldCheck, Search } from 'lucide-react';
 
 const NIGERIAN_BANKS = [
   { code: '044', name: 'Access Bank' },
@@ -25,9 +25,14 @@ export default function CashoutPage() {
   const [bankCode, setBankCode] = useState('058');
   const [accountNumber, setAccountNumber] = useState('');
   const [amount, setAmount] = useState('1350');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const filteredBanks = NIGERIAN_BANKS.filter((b) =>
+    b.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCashout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +89,9 @@ export default function CashoutPage() {
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Cashout Initiated!</h2>
-            <p className="text-slate-400 text-sm mb-6">
-              Your transfer of ₦{parseFloat(amount).toLocaleString()} to account {accountNumber} has been queued via Paystack.
+            <h2 className="text-2xl font-bold text-white mb-2">Cashout Transfer Initiated!</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+              Your payout of <span className="text-emerald-400 font-bold">₦{parseFloat(amount).toLocaleString()}</span> to account <span className="text-white font-mono">{accountNumber}</span> has been processed via Paystack.
             </p>
             <button
               onClick={() => router.push('/dashboard')}
@@ -116,21 +121,31 @@ export default function CashoutPage() {
             <form onSubmit={handleCashout} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Select Nigerian Bank
+                  Select Bank
                 </label>
-                <div className="relative">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search bank name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  </div>
+
                   <select
                     value={bankCode}
                     onChange={(e) => setBankCode(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-white focus:border-emerald-500 focus:outline-none text-sm appearance-none"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-emerald-500 focus:outline-none text-sm"
                   >
-                    {NIGERIAN_BANKS.map((b) => (
+                    {filteredBanks.map((b) => (
                       <option key={b.code} value={b.code}>
                         {b.name}
                       </option>
                     ))}
                   </select>
-                  <Building2 className="w-4 h-4 text-slate-500 absolute right-4 top-4 pointer-events-none" />
                 </div>
               </div>
 
@@ -144,7 +159,7 @@ export default function CashoutPage() {
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   placeholder="0123456789"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-white focus:border-emerald-500 focus:outline-none text-base"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-white focus:border-emerald-500 focus:outline-none text-base font-mono"
                   required
                 />
               </div>

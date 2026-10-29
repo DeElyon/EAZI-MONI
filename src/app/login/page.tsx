@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { MessageSquare, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { MessageSquare, ArrowRight, ShieldCheck, Loader2, RotateCcw } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,9 +13,20 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [timer, setTimer] = useState(30);
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    let interval: any = null;
+    if (step === 'otp' && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
+
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     setLoading(true);
 
@@ -40,6 +51,7 @@ export default function LoginPage() {
 
       setPhone(cleanPhone);
       setStep('otp');
+      setTimer(30);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -123,7 +135,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl">
+              <div className="mb-4 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl font-medium">
                 {error}
               </div>
             )}
@@ -169,13 +181,13 @@ export default function LoginPage() {
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Enter OTP</h2>
+                <h2 className="text-xl font-bold text-white">Enter 6-Digit OTP</h2>
                 <p className="text-slate-400 text-sm">Sent via WhatsApp to {phone}</p>
               </div>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl">
+              <div className="mb-4 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl font-medium">
                 {error}
               </div>
             )}
@@ -208,14 +220,27 @@ export default function LoginPage() {
                 )}
               </button>
 
-              <div className="text-center">
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setStep('phone')}
-                  className="text-sm text-slate-400 hover:text-white transition-colors"
+                  className="hover:text-white transition-colors"
                 >
                   Change phone number
                 </button>
+
+                {timer > 0 ? (
+                  <span>Resend code in {timer}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSendOtp()}
+                    disabled={loading}
+                    className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Resend OTP
+                  </button>
+                )}
               </div>
             </form>
           </div>

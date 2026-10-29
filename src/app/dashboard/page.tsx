@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Wallet, Gift, ArrowUpRight, History, Zap, CheckCircle2, Loader2, LogOut } from 'lucide-react';
+import { Wallet, Gift, ArrowUpRight, History, Zap, CheckCircle2, Loader2, LogOut, Filter } from 'lucide-react';
 
 export default function DashboardPage() {
   const [balance, setBalance] = useState<number | null>(null);
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [claimingReturn, setClaimingReturn] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [filter, setFilter] = useState<'all' | 'claims' | 'payouts'>('all');
 
   const loadDashboardData = async () => {
     try {
@@ -183,10 +184,37 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <div className="mt-10 bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <History className="w-5 h-5 text-slate-400" />
               <h3 className="text-base font-bold text-white">Recent Activity</h3>
+            </div>
+
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  filter === 'all' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilter('claims')}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  filter === 'claims' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Claims
+              </button>
+              <button
+                onClick={() => setFilter('payouts')}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  filter === 'payouts' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Cashouts
+              </button>
             </div>
           </div>
 
@@ -194,53 +222,55 @@ export default function DashboardPage() {
             <p className="text-slate-500 text-sm">No recent transactions recorded.</p>
           ) : (
             <div className="space-y-3">
-              {claims.map((claim) => (
-                <div
-                  key={claim.id}
-                  className="flex items-center justify-between p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
-                      <Gift className="w-4 h-4" />
+              {(filter === 'all' || filter === 'claims') &&
+                claims.map((claim) => (
+                  <div
+                    key={claim.id}
+                    className="flex items-center justify-between p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white capitalize">
+                          {claim.type} Bonus Claim
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(claim.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-white capitalize">
-                        {claim.type} Bonus Claim
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(claim.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <span className="text-sm font-bold text-emerald-400">
+                      +{formatNaira(claim.amount)}
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-emerald-400">
-                    +{formatNaira(claim.amount)}
-                  </span>
-                </div>
-              ))}
+                ))}
 
-              {payouts.map((payout) => (
-                <div
-                  key={payout.id}
-                  className="flex items-center justify-between p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl">
-                      <ArrowUpRight className="w-4 h-4" />
+              {(filter === 'all' || filter === 'payouts') &&
+                payouts.map((payout) => (
+                  <div
+                    key={payout.id}
+                    className="flex items-center justify-between p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl">
+                        <ArrowUpRight className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white capitalize">
+                          Paystack Cashout ({payout.status})
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(payout.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-white capitalize">
-                        Paystack Cashout ({payout.status})
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(payout.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <span className="text-sm font-bold text-rose-400">
+                      -{formatNaira(payout.amount)}
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-rose-400">
-                    -{formatNaira(payout.amount)}
-                  </span>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>
